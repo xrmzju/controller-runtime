@@ -159,6 +159,11 @@ type controllerManager struct {
 	// It can be overridden for tests.
 	onStoppedLeading func()
 
+	// onNewLeader is called when the client observes a leader that is
+	// not the previously observed leader. This includes the first observed
+	// leader when the client starts.
+	onNewLeader func(identity string)
+
 	// shutdownCtx is the context that can be used during shutdown. It will be cancelled
 	// after the gracefulShutdownTimeout ended. It must not be accessed before internalStop
 	// is closed because it will be nil.
@@ -629,6 +634,11 @@ func (cm *controllerManager) startLeaderElection(ctx context.Context) (err error
 				// Since Start is wrapped in log.Fatal when called, we can just return
 				// an error here which will cause the program to exit.
 				cm.errChan <- errors.New("leader election lost")
+			},
+			OnNewLeader: func(identity string) {
+				if cm.onNewLeader != nil {
+					cm.onNewLeader(identity)
+				}
 			},
 		},
 		ReleaseOnCancel: cm.leaderElectionReleaseOnCancel,

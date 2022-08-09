@@ -186,6 +186,15 @@ type Options struct {
 	// between tries of actions. Default is 2 seconds.
 	RetryPeriod *time.Duration
 
+
+	// OnStoppedLeading is callled when the leader election lease is lost.
+	// It can be overridden for tests.
+	OnStoppedLeading func()
+	// OnNewLeader is called when the client observes a leader that is
+	// not the previously observed leader. This includes the first observed
+	// leader when the client starts.
+	OnNewLeader func(identity string)
+
 	// Namespace if specified restricts the manager's cache to watch objects in
 	// the desired namespace Defaults to all namespaces
 	//
@@ -395,6 +404,8 @@ func New(config *rest.Config, options Options) (Manager, error) {
 		internalProceduresStop:        make(chan struct{}),
 		leaderElectionStopped:         make(chan struct{}),
 		leaderElectionReleaseOnCancel: options.LeaderElectionReleaseOnCancel,
+		onStoppedLeading:              options.OnStoppedLeading,
+		onNewLeader:                   options.OnNewLeader,
 	}, nil
 }
 
